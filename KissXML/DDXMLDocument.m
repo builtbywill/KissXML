@@ -66,8 +66,8 @@
 - (instancetype)initWithXMLString:(NSString *)string options:(NSUInteger)mask error:(NSError **)error
 {
 	return [self initWithData:[string dataUsingEncoding:NSUTF8StringEncoding]
-	                  options:mask
-	                    error:error];
+					  options:mask
+						error:error];
 }
 
 /**
@@ -93,10 +93,19 @@
 	xmlKeepBlanksDefault(0);
 	
 	xmlDocPtr doc = xmlParseMemory([data bytes], (int)[data length]);
-	if (doc == NULL)
+	if (doc == nil)
 	{
-		if (error) *error = [NSError errorWithDomain:@"DDXMLErrorDomain" code:1 userInfo:nil];
-		
+		if (error) {
+			NSDictionary *userInfo = nil;
+			xmlErrorPtr lastErrorPtr = xmlGetLastError();
+			if (lastErrorPtr) {
+				userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+							[NSString stringWithUTF8String:lastErrorPtr->message], NSLocalizedDescriptionKey,
+							nil];
+			}
+			*error = [NSError errorWithDomain:@"DDXMLErrorDomain" code:1 userInfo:userInfo];
+			xmlResetLastError();
+		}
 		return nil;
 	}
 	
